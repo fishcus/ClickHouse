@@ -40,7 +40,6 @@ protected:
 
     Chunk totals;
     bool add_totals = false;
-    bool was_totals_added = false;
 
 private:
     SubqueryForSet subquery;

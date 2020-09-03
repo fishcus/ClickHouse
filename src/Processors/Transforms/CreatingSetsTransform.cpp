@@ -43,7 +43,11 @@ InputPort * CreatingSetsTransform::addTotalsPort()
 
 IProcessor::Status CreatingSetsTransform::prepare()
 {
-    auto status = IAccumulatingTransform::prepare();
+    auto status = IProcessor::Status::Finished;
+
+    if (!add_totals)
+        status = IAccumulatingTransform::prepare();
+
     if (status == IProcessor::Status::Finished && !finished)
     {
         if (inputs.size() > 1)
