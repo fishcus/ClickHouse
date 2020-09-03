@@ -38,6 +38,10 @@ public:
 protected:
     bool finished = false;
 
+    Chunk totals;
+    bool add_totals = false;
+    bool was_totals_added = false;
+
 private:
     SubqueryForSet subquery;
 

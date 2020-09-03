@@ -44,19 +44,25 @@ InputPort * CreatingSetsTransform::addTotalsPort()
 IProcessor::Status CreatingSetsTransform::prepare()
 {
     auto status = IAccumulatingTransform::prepare();
-    if (status == IProcessor::Status::Finished && inputs.size() > 1)
+    if (status == IProcessor::Status::Finished && !was_totals_added)
     {
-        auto & totals_input = inputs.back();
-        if (totals_input.isFinished())
-            return IProcessor::Status::Finished;
+        if (inputs.size() > 1)
+        {
+            auto & totals_input = inputs.back();
+            if (!totals_input.isFinished())
+            {
 
-        totals_input.setNeeded();
-        if (!totals_input.hasData())
-            return IProcessor::Status::NeedData;
+                totals_input.setNeeded();
+                if (!totals_input.hasData())
+                    return IProcessor::Status::NeedData;
 
-        auto totals = totals_input.pull();
-        subquery.setTotals(getInputPort().getHeader().cloneWithColumns(totals.detachColumns()));
-        totals_input.close();
+                totals = totals_input.pull();
+                totals_input.close();
+            }
+        }
+
+        add_totals = true;
+        return IProcessor::Status::Ready;
     }
 
     return status;
@@ -66,6 +72,19 @@ void CreatingSetsTransform::work()
 {
     if (!is_initialized)
         init();
+
+    if (add_totals)
+    {
+        if (totals)
+            subquery.setTotals(getInputPort().getHeader().cloneWithColumns(totals.detachColumns()));
+        else
+            /// Set empty totals anyway, it is needed for MergeJoin.
+            subquery.setTotals({});
+
+        add_totals = false;
+        was_totals_added = true;
+        return;
+    }
 
     IAccumulatingTransform::work();
 }
