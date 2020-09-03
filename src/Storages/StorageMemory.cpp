@@ -57,6 +57,7 @@ protected:
             std::lock_guard guard(*mutex);
             current_it = data->begin();
             num_blocks = data->size();
+            is_finished = num_blocks == 0;
 
             data = nullptr;
             mutex = nullptr;
