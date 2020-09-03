@@ -75,14 +75,14 @@ void CreatingSetsTransform::work()
 
     if (add_totals)
     {
-        if (totals)
-            subquery.setTotals(getInputPort().getHeader().cloneWithColumns(totals.detachColumns()));
-        else
-            /// Set empty totals anyway, it is needed for MergeJoin.
-            subquery.setTotals({});
+        if (subquery.set)
+            subquery.set->finishInsert();
 
-        add_totals = false;
-        was_totals_added = true;
+        if (table_out)
+            table_out->writeSuffix();
+
+        finishSubquery();
+        finished = true;
         return;
     }
 
@@ -129,6 +129,12 @@ void CreatingSetsTransform::finishSubquery()
     {
         LOG_DEBUG(log, "Subquery has empty result.");
     }
+
+    if (totals)
+        subquery.setTotals(getInputPort().getHeader().cloneWithColumns(totals.detachColumns()));
+    else
+        /// Set empty totals anyway, it is needed for MergeJoin.
+        subquery.setTotals({});
 }
 
 void CreatingSetsTransform::init()
@@ -178,14 +184,6 @@ void CreatingSetsTransform::consume(Chunk chunk)
 
 Chunk CreatingSetsTransform::generate()
 {
-    if (subquery.set)
-        subquery.set->finishInsert();
-
-    if (table_out)
-        table_out->writeSuffix();
-
-    finishSubquery();
-    finished = true;
     return {};
 }
 
