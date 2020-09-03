@@ -48,11 +48,15 @@ public:
     std::optional<UInt64> totalRows() const override;
     std::optional<UInt64> totalBytes() const override;
 
+    void delayReadForGlobalSubqueries() { delay_read_for_global_subqueries = true; }
+
 private:
     /// The data itself. `list` - so that when inserted to the end, the existing iterators are not invalidated.
     BlocksList data;
 
     mutable std::mutex mutex;
+
+    bool delay_read_for_global_subqueries = false;
 
 protected:
     StorageMemory(const StorageID & table_id_, ColumnsDescription columns_description_, ConstraintsDescription constraints_);
