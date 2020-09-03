@@ -43,12 +43,8 @@ InputPort * CreatingSetsTransform::addTotalsPort()
 
 IProcessor::Status CreatingSetsTransform::prepare()
 {
-    auto status = IProcessor::Status::Finished;
-
-    if (!add_totals)
-        status = IAccumulatingTransform::prepare();
-
-    if (status == IProcessor::Status::Finished && !finished)
+    auto status = IAccumulatingTransform::prepare();
+    if (status == IProcessor::Status::Finished && !was_totals_added)
     {
         if (inputs.size() > 1)
         {
@@ -79,14 +75,14 @@ void CreatingSetsTransform::work()
 
     if (add_totals)
     {
-        if (subquery.set)
-            subquery.set->finishInsert();
+//        if (totals)
+//            subquery.setTotals(getInputPort().getHeader().cloneWithColumns(totals.detachColumns()));
+//        else
+//            /// Set empty totals anyway, it is needed for MergeJoin.
+//            subquery.setTotals({});
 
-        if (table_out)
-            table_out->writeSuffix();
-
-        finishSubquery();
-        finished = true;
+        add_totals = false;
+        was_totals_added = true;
         return;
     }
 
@@ -134,11 +130,7 @@ void CreatingSetsTransform::finishSubquery()
         LOG_DEBUG(log, "Subquery has empty result.");
     }
 
-    if (totals)
-        subquery.setTotals(getInputPort().getHeader().cloneWithColumns(totals.detachColumns()));
-    else
-        /// Set empty totals anyway, it is needed for MergeJoin.
-        subquery.setTotals({});
+    subquery.setTotals({});
 }
 
 void CreatingSetsTransform::init()
@@ -188,6 +180,14 @@ void CreatingSetsTransform::consume(Chunk chunk)
 
 Chunk CreatingSetsTransform::generate()
 {
+    if (subquery.set)
+        subquery.set->finishInsert();
+
+    if (table_out)
+        table_out->writeSuffix();
+
+    finishSubquery();
+    finished = true;
     return {};
 }
 
